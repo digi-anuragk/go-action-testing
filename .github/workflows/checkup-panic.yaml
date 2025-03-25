@@ -32,9 +32,9 @@ jobs:
           ./app ${{ inputs.environment }}
 
   check-algolia-server-errors:
-    outputs:
-      should-run: ${{ steps. }}
-      op: ${{ steps.
+    # outputs:
+    #   should-run: ${{ steps. }}
+    #   op: ${{ steps.
     needs:
       - build-and-run
     runs-on: ubuntu-latest
