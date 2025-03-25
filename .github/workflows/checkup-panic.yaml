@@ -30,3 +30,24 @@ jobs:
           go mod download all
           go build -o app
           ./app ${{ inputs.environment }}
+
+  check-algolia-server-errors:
+    outputs:
+      should-run: ${{ steps. }}
+      op: ${{ steps.
+    needs:
+      - build-and-run
+    runs-on: ubuntu-latest
+    if: ${{ always()  }}
+
+    steps:
+      - name: set-variable
+        run: |
+          echo "IsError=${{ contains(needs.*.result, 'failure')}}" >> $GITHUB_ENV
+          echo "IsErrorAndAlgoliaFailure= ${{ contains(needs.*.result, 'failure') && contains(needs.*.result, 'panic: failed to do request: all hosts have been contacted unsuccessfully')}}" >> $GITHUB_ENV
+          echo ""
+      - name: do-job
+        id: do-job
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') && contains(needs.*.result, 'panic: failed to do request: all hosts have been contacted unsuccessfully')}}" ]];then 
+          echo "Algolia server please rerun the same action with option of re runing only failed jobs"
