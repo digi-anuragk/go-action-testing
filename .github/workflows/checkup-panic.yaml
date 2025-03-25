@@ -27,7 +27,6 @@ jobs:
 
       - name: Build and Run Go Scraper
         run: |
-          cd crawler
           go mod download all
           go build -o app
           ./app ${{ inputs.environment }}
