@@ -1,0 +1,33 @@
+name: Checkup Final
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: 'actions/setup-go@v5'
+        with:
+          go-version: '1.23.3'
+
+      - run: go version
+
+      - name: Build and Run Go Scraper
+        run: |
+          cd crawler
+          go mod download all
+          go build -o app
+          ./app ${{ inputs.environment }}
