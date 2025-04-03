@@ -134,7 +134,7 @@ jobs:
                 blocks: [
                   {
                     "type": "header",
-                    "text": { "type": "plain_text", "text": ":white_check_mark: Algolia Docs Crawl Successful!", "emoji": true }
+                    "text": { "type": "plain_text", "text": ":white_check_mark::white_check_mark: Crawler Workflow Passed :white_check_mark::white_check_mark:", "emoji": true }
                   },
                   {
                     "type": "section",
@@ -155,7 +155,7 @@ jobs:
               let blocks = [
                 {
                   "type": "header",
-                  "text": { "type": "plain_text", "text": ":warning: Algolia Docs Crawl Completed with Issues!", "emoji": true }
+                  "text": { "type": "plain_text", "text": ":bangbang: Crawler Workflow Failed :bangbang:", "emoji": true }
                 },
                 {
                   "type": "context",
@@ -186,7 +186,7 @@ jobs:
 
               // Add final divider and footer
               blocks.push({ "type": "divider" });
-              blocks.push({ "type": "section", "text": { "type": "mrkdwn", "text": "Please review the workflow logs for detailed error messages." } });
+              blocks.push({ "type": "section", "text": { "type": "mrkdwn", "text": "Please review the workflow logs for detailed error messages.\n>If after checking if issues are due to Algolia connection, please rerun the job by selecting `Re-run only failed jobs`" } });
 
               slackPayload = { blocks };
               console.log("Issues detected. Generating failure payload.");
