@@ -2,11 +2,33 @@ name: Checkup Final
 
 on:
   workflow_dispatch:
+    inputs:
+      buildError1:
+        description: ""
+        type: boolean
+        required: false
+        default: false
+      buildError2:
+        description: ""
+        type: boolean
+        required: false
+        default: false
+      AlgoliaError1:
+        description: ""
+        type: boolean
+        required: false
+        default: false
+      AlgoliaError2:
+        description: ""
+        type: boolean
+        required: false
+        default: false
+
 jobs:
   appsec-android-native-job:
     uses: ./.github/workflows/reuseable_workflow.yaml
     with:
-      ibe: false
+      ibe: ${{ inputs.buildError1 }}
       iae: false
       targetRepo: digital-ai/docs-appsec-android-native # Use actual repo name
         # secrets: inherit
@@ -15,14 +37,14 @@ jobs:
     uses: ./.github/workflows/reuseable_workflow.yaml
     with:
       ibe: false
-      iae: false
+      iae: ${{ inputs.AlgoliaError1 }}
       targetRepo: digital-ai/docs-deploy # Use actual repo name
 
   release-job:
     uses: ./.github/workflows/reuseable_workflow.yaml
     with:
-      ibe: false
-      iae: false
+      ibe: ${{ inputs.buildError2 }}
+      iae: ${{ inputs.AlgoliaError1 }}
       targetRepo: digital-ai/docs-release # Use actual repo name
 
   platform-job:
@@ -36,7 +58,7 @@ jobs:
     uses: ./.github/workflows/reuseable_workflow.yaml
     with:
       ibe: false
-      iae: false
+      iae: ${{ inputs.AlgoliaError1 }}
       targetRepo: digital-ai/docs-appsec-final # Use actual repo name
   
   check_failures:
