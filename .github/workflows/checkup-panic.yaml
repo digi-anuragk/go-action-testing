@@ -139,7 +139,7 @@ jobs:
             core.setOutput('has_issues', has_issues.toString());
 
       - name: Send Slack Notification on Issues
-        if: steps.aggregate.outputs.has_issues == 'true' && steps.aggregate.outputs.slack_message != ''
+        # if: steps.aggregate.outputs.has_issues == 'true' && steps.aggregate.outputs.slack_message != ''
         run: |
           echo "${{ steps.aggregate.outputs.has_issues }}"
           echo "${{ steps.aggregate.outputs.slack_message }}"
