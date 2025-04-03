@@ -233,5 +233,5 @@ jobs:
 
       - name: Send Slack Notification on Issues
         run: |
-          echo "${{ steps.aggregate.outputs.has_issues }}"
+          echo '${{ steps.aggregate.outputs.has_issues }}'
           echo "${{ steps.aggregate.outputs.slack_payload }}"

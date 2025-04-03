@@ -60,7 +60,7 @@ jobs:
 
       - name: Set Final Status # Step 3 - SAME indentation level as Build/Crawl
         id: set_status
-        # if: always() # Ensure this runs even if prior steps fail (if needed)
+        if: always() # Ensure this runs even if prior steps fail (if needed)
         run: |
           STATUS="unknown"
           ERROR_LOG="No specific error captured."
@@ -78,7 +78,7 @@ jobs:
           elif [[ "${{ steps.crawl.outcome }}" == 'failure' ]]; then
             echo "Crawl step failed. Checking logs..."
             # Replace log check with actual method if needed
-            if echo "${{ steps.crawl.outputs.stderr }}" | grep -q "panic:"; then # Example: Check stderr output
+            if echo "${{ steps.crawl.outputs.stderr }}" | grep -q "panic:"; then
                STATUS="algolia_failure"
                ERROR_LOG=$(echo "${{ steps.crawl.outputs.stderr }}" | grep "panic:" | head -n 1)
                echo "Algolia failure (panic) detected."
