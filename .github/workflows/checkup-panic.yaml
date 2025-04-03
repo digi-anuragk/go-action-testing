@@ -82,18 +82,6 @@ jobs:
             const needs_context = ${{ toJson(needs) }};
             console.log("Needs Context:", JSON.stringify(needs_context, null, 2));
 
-            // --- Map Job IDs to Repository Names ---
-            // Crucial for identifying skipped jobs correctly
-            const jobToRepoMap = {
-              'crawl_repo_1_initial': 'docs-repo-1',
-              'crawl_repo_2_middle':  'docs-repo-2',
-              'crawl_repo_3_middle':  'docs-repo-3',
-              'crawl_repo_4_middle':  'docs-repo-4',
-              'crawl_repo_5_final':   'docs-repo-5'
-              // Add mappings for ALL jobs listed in 'needs' above
-            };
-            // --- --- --- --- --- --- --- --- --- ---
-
             let build_failures = [];
             let algolia_failures = [];
             let skipped_jobs = [];
@@ -104,7 +92,7 @@ jobs:
 
             for (const job_id of job_ids) {
               const job_result = needs_context[job_id];
-              const repo_name = jobToRepoMap[job_id] || job_id; // Get repo name from map
+              const repo_name = job_id; // Get repo name from map
 
               // Check job status: failure, skipped, cancelled, etc. (exclude success)
               if (job_result.result !== 'success') {
@@ -133,7 +121,7 @@ jobs:
               }
             }
 
-            let slack_message = "ALGOLIA CRAWL SUCCESS";
+            let slack_message = "";
             if (has_issues) {
               slack_message += `*GitHub Actions: Doc Crawl Workflow completed with issues* :warning:\n`;
               slack_message += `Workflow Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\n`;
@@ -153,7 +141,7 @@ jobs:
             } else {
                console.log("All jobs completed successfully.");
                // Optionally send a success message or take no action
-               // slack_message = "*GitHub Actions: Doc Crawl Workflow completed successfully* :white_check_mark:";
+               slack_message = "*GitHub Actions: Doc Crawl Workflow completed successfully* :white_check_mark:";
             }
 
             core.setOutput('slack_message', slack_message);
@@ -161,7 +149,6 @@ jobs:
             core.setOutput('has_issues', has_issues.toString());
 
       - name: Send Slack Notification on Issues
-        # if: steps.aggregate.outputs.has_issues == 'true' && steps.aggregate.outputs.slack_message != ''
         run: |
           echo "${{ steps.aggregate.outputs.has_issues }}"
           echo "${{ steps.aggregate.outputs.slack_message }}"
