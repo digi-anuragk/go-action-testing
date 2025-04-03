@@ -2,15 +2,6 @@ name: Checkup Final
 
 on:
   workflow_dispatch:
-    # inputs:
-    #   environment:
-    #     description: "Environment"
-    #     required: true
-    #     default: "false"
-    #     type: choice
-    #     options:
-    #       - "true"
-    #       - "false"
 jobs:
   appsec-android-native-job:
     runs-on: ubuntu-latest
@@ -166,9 +157,7 @@ jobs:
   check_failures:
     name: Check Failures and Notify
     runs-on: ubuntu-latest
-    # IMPORTANT: Run this job even if previous jobs failed or were skipped
     if: always()
-    # IMPORTANT: Depend on *all* preceding crawl jobs
     needs:
       - appsec-android-native-job # Depends on initial job
       - deploy-job  # Depends on all middle jobs
@@ -265,17 +254,7 @@ jobs:
             core.setOutput('has_issues', has_issues.toString());
 
       - name: Send Slack Notification on Issues
-        # Send if the aggregation step detected *any* non-success states
         if: steps.aggregate.outputs.has_issues == 'true' && steps.aggregate.outputs.slack_message != ''
         run: |
           echo "${{ steps.aggregate.outputs.has_issues }}"
           echo "${{ steps.aggregate.outputs.slack_message }}"
-        # uses: slackapi/slack-github-action@v1.25.0
-        # with:
-        #   channel-id: 'YOUR_SLACK_CHANNEL_ID' # Replace
-        #   payload: |
-        #     {
-        #       "text": "${{ steps.aggregate.outputs.slack_message }}"
-        #     }
-        # env:
-        #   SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }} # Add secret
