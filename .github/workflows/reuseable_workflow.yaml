@@ -13,6 +13,14 @@ on:
         description: Target Docs repository
         type: string
         required: true
+    outputs:
+      status:
+        description: "The status of the process: success, build_failure, algolia_failure"
+        value: ${{ jobs.build_and_crawl.outputs.outcome }}
+      error_log:
+        description: "A snippet of the error log if failure occurred"
+        value: ${{ jobs.build_and_crawl.outputs.error_details }}
+    
     #   localTest:
     #     description: Should generate json file only
     #     type: boolean
@@ -40,6 +48,7 @@ on:
     #     description: Algolia API apiKey
     #     required: true
 
+
 jobs:
   build_and_crawl:
     runs-on: ubuntu-latest
@@ -47,6 +56,8 @@ jobs:
       outcome: ${{ steps.set_status.outputs.status }}
       error_details: ${{ steps.set_status.outputs.error_log }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       # --- Build Step ---
       - name: Build Documentation
