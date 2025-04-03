@@ -121,6 +121,88 @@ jobs:
               }
             }
 
+            // ###############################################################################
+
+                        // --- Construct Slack Block Kit Payload ---
+            let slackPayload = {};
+            const workflowRunUrl = `${github_context.server_url}/${github_context.repository}/actions/runs/${github_context.run_id}`;
+
+            if (!has_issues) {
+              // SUCCESS PAYLOAD
+              slackPayload = {
+                blocks: [
+                  {
+                    "type": "header",
+                    "text": { "type": "plain_text", "text": ":white_check_mark: Algolia Docs Crawl Successful!", "emoji": true }
+                  },
+                  {
+                    "type": "section",
+                    "text": { "type": "mrkdwn", "text": "All documentation repositories were processed successfully by the Algolia crawler. :rocket:" }
+                  },
+                  {
+                    "type": "context",
+                    "elements": [
+                      { "type": "mrkdwn", "text": `Workflow Run: <${workflowRunUrl}|View Run>` },
+                      { "type": "mrkdwn", "text": `*Triggered:* ${github_context.event_name} by ${github_context.actor}` }
+                    ]
+                  }
+                ]
+              };
+              console.log("All jobs succeeded. Generating success payload.");
+            } else {
+              // FAILURE/ISSUES PAYLOAD
+              let blocks = [
+                {
+                  "type": "header",
+                  "text": { "type": "plain_text", "text": ":warning: Algolia Docs Crawl Completed with Issues!", "emoji": true }
+                },
+                {
+                  "type": "context",
+                  "elements": [
+                    { "type": "mrkdwn", "text": `Workflow Run: <${workflowRunUrl}|View Run Logs for Details>` },
+                    { "type": "mrkdwn", "text": `*Triggered:* ${github_context.event_name} by ${github_context.actor}` }
+                  ]
+                },
+                { "type": "divider" }
+              ];
+
+              // Helper function to create list sections for Block Kit
+              const createListSection = (title, items) => {
+                if (!items || items.length === 0) return [];
+                // Format items: "- item1\n- item2" inside a code block
+                const formattedItems = "```\n- " + items.join('\n- ') + "\n```";
+                return [
+                  { "type": "section", "text": { "type": "mrkdwn", "text": title } },
+                  { "type": "section", "text": { "type": "mrkdwn", "text": formattedItems } }
+                ];
+              };
+
+              // Conditionally add failure sections
+              blocks = blocks.concat(createListSection("*🏗️ Build Failures Encountered:*", build_failures));
+              blocks = blocks.concat(createListSection("*🕸️ Algolia Crawler Failures (Check logs for 'panic:'/connection issues):*", algolia_failures));
+              blocks = blocks.concat(createListSection("*⏭️ Skipped Jobs (Did not run due to upstream failure):*", skipped_jobs));
+              blocks = blocks.concat(createListSection("*❓ Unknown / Other Issues:*", unknown_failures));
+
+              // Add final divider and footer
+              blocks.push({ "type": "divider" });
+              blocks.push({ "type": "section", "text": { "type": "mrkdwn", "text": "Please review the workflow logs for detailed error messages." } });
+
+              slackPayload = { blocks };
+              console.log("Issues detected. Generating failure payload.");
+            }
+
+            // --- Set Outputs ---
+            const payloadString = JSON.stringify(slackPayload);
+            // Log payload for debugging in workflow logs (optional)
+            // console.log("Generated Slack Payload String:", payloadString);
+
+            // Set the output for the Slack action step
+            core.setOutput('slack_payload', payloadString);
+            // Keep has_issues output if needed for the 'if' condition on the Slack step
+            core.setOutput('has_issues', has_issues.toString());
+
+            // ###############################################################################
+
             let slack_message = "";
             if (has_issues) {
               slack_message += `*GitHub Actions: Doc Crawl Workflow completed with issues* :warning:\n`;
@@ -144,9 +226,9 @@ jobs:
                slack_message = "*GitHub Actions: Doc Crawl Workflow completed successfully* :white_check_mark:";
             }
 
-            core.setOutput('slack_message', slack_message);
+            // core.setOutput('slack_message', slack_message);
             // Output true if there were *any* issues (failures or skips)
-            core.setOutput('has_issues', has_issues.toString());
+            // core.setOutput('has_issues', has_issues.toString());
 
       - name: Send Slack Notification on Issues
         run: |

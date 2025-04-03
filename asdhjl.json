@@ -1,0 +1,31 @@
+{
+  "blocks": [
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": ":bangbang: Crawler Workflow Failed :bangbang:",
+        "emoji": true
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "plain_text",
+        "text": "One or more jobs have failed :skull::skull: \n\nJob names: abc\ndef\n \n\n",
+        "emoji": true
+      }
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "image",
+          "image_url": "https://slack-imgs.com/?c=1&o1=wi32.he32.si&url=https%3A%2F%2Fslack.github.com%2Fstatic%2Fimg%2Ffavicon-neutral.png",
+          "alt_text": "cute cat"
+        },
+        { "type": "mrkdwn", "text": "<https://www.google.co.in/ | google>" }
+      ]
+    }
+  ]
+}
