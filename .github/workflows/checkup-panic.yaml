@@ -4,155 +4,40 @@ on:
   workflow_dispatch:
 jobs:
   appsec-android-native-job:
-    runs-on: ubuntu-latest
-    outputs:
-      status: ${{ steps.call_reusable.outputs.status }}
-      repo_name: 'docs-appsec-android-native' # Hardcode or use env var
-      error_details: ${{ steps.call_reusable.outputs.error_log }} # Uncomment if needed
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Verify Workflow File Exists
-        run: |
-          echo "--- Verifying file path and existence ---"
-          echo "Current directory: $(pwd)"
-          echo "Listing .github directory contents:"
-          ls -la .github || echo ".github directory not found!"
-          echo "Listing .github/workflows directory contents:"
-          ls -la .github/workflows || echo ".github/workflows directory not found!"
-          echo "Checking specific file:"
-          # IMPORTANT: Use the EXACT filename from your 'uses:' clause below
-          ls -la ./.github/workflows/reuseable_workflow.yaml || echo "SPECIFIC FILE NOT FOUND!"
-          echo "--- End verification ---"
-        shell: bash
-      - name: Call Reusable Workflow for Initial Repo
-        id: call_reusable
-        uses: ./.github/workflows/reuseable_workflow.yaml
-        with:
-          ibe: false
-          iae: false
-          targetRepo: digital-ai/docs-appsec-android-native # Use actual repo name
+    uses: ./.github/workflows/reuseable_workflow.yaml
+    with:
+      ibe: false
+      iae: false
+      targetRepo: digital-ai/docs-appsec-android-native # Use actual repo name
         # secrets: inherit
 
   deploy-job:
-    runs-on: ubuntu-latest
-    outputs:
-      status: ${{ steps.call_reusable.outputs.status }}
-      repo_name: 'docs-deploy' # Hardcode or use env var
-      error_details: ${{ steps.call_reusable.outputs.error_log }} # Uncomment if needed
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Verify Workflow File Exists
-        run: |
-          echo "--- Verifying file path and existence ---"
-          echo "Current directory: $(pwd)"
-          echo "Listing .github directory contents:"
-          ls -la .github || echo ".github directory not found!"
-          echo "Listing .github/workflows directory contents:"
-          ls -la .github/workflows || echo ".github/workflows directory not found!"
-          echo "Checking specific file:"
-          # IMPORTANT: Use the EXACT filename from your 'uses:' clause below
-          ls -la ./.github/workflows/reuseable_workflow.yaml || echo "SPECIFIC FILE NOT FOUND!"
-          echo "--- End verification ---"
-        shell: bash
-      - name: Call Reusable Workflow for Initial Repo
-        id: call_reusable
-        uses: ./.github/workflows/reuseable_workflow.yaml
-        with:
-          ibe: false
-          iae: false
-          targetRepo: digital-ai/docs-deploy # Use actual repo name
+    uses: ./.github/workflows/reuseable_workflow.yaml
+    with:
+      ibe: false
+      iae: false
+      targetRepo: digital-ai/docs-deploy # Use actual repo name
 
   release-job:
-    runs-on: ubuntu-latest
-    outputs:
-      status: ${{ steps.call_reusable.outputs.status }}
-      repo_name: 'docs-release' # Hardcode or use env var
-      error_details: ${{ steps.call_reusable.outputs.error_log }} # Uncomment if needed
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Verify Workflow File Exists
-        run: |
-          echo "--- Verifying file path and existence ---"
-          echo "Current directory: $(pwd)"
-          echo "Listing .github directory contents:"
-          ls -la .github || echo ".github directory not found!"
-          echo "Listing .github/workflows directory contents:"
-          ls -la .github/workflows || echo ".github/workflows directory not found!"
-          echo "Checking specific file:"
-          # IMPORTANT: Use the EXACT filename from your 'uses:' clause below
-          ls -la ./.github/workflows/reuseable_workflow.yaml || echo "SPECIFIC FILE NOT FOUND!"
-          echo "--- End verification ---"
-        shell: bash
-      - name: Call Reusable Workflow for Initial Repo
-        id: call_reusable
-        uses: ./.github/workflows/reuseable_workflow.yaml
-        with:
-          ibe: false
-          iae: false
-          targetRepo: digital-ai/docs-release # Use actual repo name
+    uses: ./.github/workflows/reuseable_workflow.yaml
+    with:
+      ibe: false
+      iae: false
+      targetRepo: digital-ai/docs-release # Use actual repo name
 
   platform-job:
-    runs-on: ubuntu-latest
-    outputs:
-      status: ${{ steps.call_reusable.outputs.status }}
-      repo_name: 'docs-platform' # Hardcode or use env var
-      error_details: ${{ steps.call_reusable.outputs.error_log }} # Uncomment if needed
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Verify Workflow File Exists
-        run: |
-          echo "--- Verifying file path and existence ---"
-          echo "Current directory: $(pwd)"
-          echo "Listing .github directory contents:"
-          ls -la .github || echo ".github directory not found!"
-          echo "Listing .github/workflows directory contents:"
-          ls -la .github/workflows || echo ".github/workflows directory not found!"
-          echo "Checking specific file:"
-          # IMPORTANT: Use the EXACT filename from your 'uses:' clause below
-          ls -la ./.github/workflows/reuseable_workflow.yaml || echo "SPECIFIC FILE NOT FOUND!"
-          echo "--- End verification ---"
-        shell: bash
-      - name: Call Reusable Workflow for Initial Repo
-        id: call_reusable
-        uses: ./.github/workflows/reuseable_workflow.yaml
-        with:
-          ibe: false
-          iae: false
-          targetRepo: digital-ai/docs-platform # Use actual repo name
+    uses: ./.github/workflows/reuseable_workflow.yaml
+    with:
+      ibe: false
+      iae: false
+      targetRepo: digital-ai/docs-platform # Use actual repo name
 
   appsec-final-job:
-    runs-on: ubuntu-latest
-    outputs:
-      status: ${{ steps.call_reusable.outputs.status }}
-      repo_name: 'docs-appsec-final' # Hardcode or use env var
-      error_details: ${{ steps.call_reusable.outputs.error_log }} # Uncomment if needed
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Verify Workflow File Exists
-        run: |
-          echo "--- Verifying file path and existence ---"
-          echo "Current directory: $(pwd)"
-          echo "Listing .github directory contents:"
-          ls -la .github || echo ".github directory not found!"
-          echo "Listing .github/workflows directory contents:"
-          ls -la .github/workflows || echo ".github/workflows directory not found!"
-          echo "Checking specific file:"
-          # IMPORTANT: Use the EXACT filename from your 'uses:' clause below
-          ls -la ./.github/workflows/reuseable_workflow.yaml || echo "SPECIFIC FILE NOT FOUND!"
-          echo "--- End verification ---"
-        shell: bash
-      - name: Call Reusable Workflow for Initial Repo
-        id: call_reusable
-        uses: ./.github/workflows/reuseable_workflow.yaml
-        with:
-          ibe: false
-          iae: false
-          targetRepo: digital-ai/docs-appsec-final # Use actual repo name
+    uses: ./.github/workflows/reuseable_workflow.yaml
+    with:
+      ibe: false
+      iae: false
+      targetRepo: digital-ai/docs-appsec-final # Use actual repo name
   
   check_failures:
     name: Check Failures and Notify
