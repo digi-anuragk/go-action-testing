@@ -2,55 +2,205 @@ name: Checkup Final
 
 on:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: "Environment"
-        required: true
-        default: "false"
-        type: choice
-        options:
-          - "true"
-          - "false"
-
+    # inputs:
+    #   environment:
+    #     description: "Environment"
+    #     required: true
+    #     default: "false"
+    #     type: choice
+    #     options:
+    #       - "true"
+    #       - "false"
 jobs:
-  build-and-run:
+  appsec-android-native-job:
     runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.call_reusable.outputs.status }}
+      repo_name: 'docs-appsec-android-native' # Hardcode or use env var
+      error_details: ${{ steps.call_reusable.outputs.error_log }} # Uncomment if needed
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: 'actions/setup-go@v5'
+      - name: Call Reusable Workflow for Initial Repo
+        id: call_reusable
+        uses: ./.github/workflows/reuseable_workflow.yaml
         with:
-          go-version: '1.23.3'
+          ibe: false
+          iae: false
+          targetRepo: digital-ai/docs-appsec-android-native # Use actual repo name
+        # secrets: inherit
 
-      - run: go version
-
-      - name: Build and Run Go Scraper
-        run: |
-          go mod download all
-          go build -o app
-          ./app ${{ inputs.environment }}
-
-  check-algolia-server-errors:
-    # outputs:
-    #   should-run: ${{ steps. }}
-    #   op: ${{ steps.
-    needs:
-      - build-and-run
+  deploy-job:
     runs-on: ubuntu-latest
-    if: ${{ always()  }}
+    outputs:
+      status: ${{ steps.call_reusable.outputs.status }}
+      repo_name: 'docs-deploy' # Hardcode or use env var
+      error_details: ${{ steps.call_reusable.outputs.error_log }} # Uncomment if needed
+    steps:
+      - name: Call Reusable Workflow for Initial Repo
+        id: call_reusable
+        uses: ./.github/workflows/reuseable_workflow.yaml
+        with:
+          ibe: false
+          iae: false
+          targetRepo: digital-ai/docs-deploy # Use actual repo name
+
+  release-job:
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.call_reusable.outputs.status }}
+      repo_name: 'docs-release' # Hardcode or use env var
+      error_details: ${{ steps.call_reusable.outputs.error_log }} # Uncomment if needed
+    steps:
+      - name: Call Reusable Workflow for Initial Repo
+        id: call_reusable
+        uses: ./.github/workflows/reuseable_workflow.yaml
+        with:
+          ibe: false
+          iae: false
+          targetRepo: digital-ai/docs-release # Use actual repo name
+
+  platform-job:
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.call_reusable.outputs.status }}
+      repo_name: 'docs-platform' # Hardcode or use env var
+      error_details: ${{ steps.call_reusable.outputs.error_log }} # Uncomment if needed
+    steps:
+      - name: Call Reusable Workflow for Initial Repo
+        id: call_reusable
+        uses: ./.github/workflows/reuseable_workflow.yaml
+        with:
+          ibe: false
+          iae: false
+          targetRepo: digital-ai/docs-platform # Use actual repo name
+
+  appsec-final-job:
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.call_reusable.outputs.status }}
+      repo_name: 'docs-appsec-final' # Hardcode or use env var
+      error_details: ${{ steps.call_reusable.outputs.error_log }} # Uncomment if needed
+    steps:
+      - name: Call Reusable Workflow for Initial Repo
+        id: call_reusable
+        uses: ./.github/workflows/reuseable_workflow.yaml
+        with:
+          ibe: false
+          iae: false
+          targetRepo: digital-ai/docs-appsec-final # Use actual repo name
+  
+  check_failures:
+    name: Check Failures and Notify
+    runs-on: ubuntu-latest
+    # IMPORTANT: Run this job even if previous jobs failed or were skipped
+    if: always()
+    # IMPORTANT: Depend on *all* preceding crawl jobs
+    needs:
+      - appsec-android-native-job # Depends on initial job
+      - deploy-job  # Depends on all middle jobs
+      - release-job
+      - platform-job  
+      - appsec-final-job # Depends on final job
+      # Add all other middle job IDs here
 
     steps:
-      - name: dump the shit
-        run : |
-          echo '${{ toJson(needs) }}'
-      - name: set-variable
+      - name: Aggregate Job Results
+        id: aggregate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const needs_context = ${{ toJson(needs) }};
+            console.log("Needs Context:", JSON.stringify(needs_context, null, 2));
+
+            // --- Map Job IDs to Repository Names ---
+            // Crucial for identifying skipped jobs correctly
+            const jobToRepoMap = {
+              'crawl_repo_1_initial': 'docs-repo-1',
+              'crawl_repo_2_middle':  'docs-repo-2',
+              'crawl_repo_3_middle':  'docs-repo-3',
+              'crawl_repo_4_middle':  'docs-repo-4',
+              'crawl_repo_5_final':   'docs-repo-5'
+              // Add mappings for ALL jobs listed in 'needs' above
+            };
+            // --- --- --- --- --- --- --- --- --- ---
+
+            let build_failures = [];
+            let algolia_failures = [];
+            let skipped_jobs = [];
+            let unknown_failures = [];
+            let has_issues = false; // Use a broader term than just 'failures'
+
+            const job_ids = Object.keys(needs_context);
+
+            for (const job_id of job_ids) {
+              const job_result = needs_context[job_id];
+              const repo_name = jobToRepoMap[job_id] || job_id; // Get repo name from map
+
+              // Check job status: failure, skipped, cancelled, etc. (exclude success)
+              if (job_result.result !== 'success') {
+                has_issues = true;
+                console.log(`Issue detected for Job ID: ${job_id} (Repo: ${repo_name}). Result: ${job_result.result}`);
+
+                if (job_result.result === 'skipped') {
+                  skipped_jobs.push(`${repo_name} (Skipped - likely upstream failure)`);
+                } else if (job_result.result === 'failure') {
+                  // Job ran but failed, check its output status
+                  const status = job_result.outputs?.status; // Use optional chaining ?.
+                  if (status === 'build_failure') {
+                    build_failures.push(repo_name);
+                  } else if (status === 'algolia_failure') {
+                    algolia_failures.push(repo_name);
+                  } else {
+                    // Failure occurred, but status wasn't set or recognized
+                    unknown_failures.push(`${repo_name} (Job Failed - Status: ${status || 'N/A'})`);
+                  }
+                } else {
+                  // Handle other non-success states like 'cancelled' if necessary
+                   unknown_failures.push(`${repo_name} (Job State: ${job_result.result})`);
+                }
+              } else {
+                 console.log(`Job ${job_id} (Repo: ${repo_name}) completed successfully.`);
+              }
+            }
+
+            let slack_message = "ALGOLIA CRAWL SUCCESS";
+            if (has_issues) {
+              slack_message += `*GitHub Actions: Doc Crawl Workflow completed with issues* :warning:\n`;
+              slack_message += `Workflow Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\n`;
+
+              if (build_failures.length > 0) {
+                slack_message += `*Build Failures* :x::\n - ${build_failures.join('\n - ')}\n\n`;
+              }
+              if (algolia_failures.length > 0) {
+                slack_message += `*Algolia Crawler Failures* (Check logs for 'panic:' or connection issues) :spider_web::\n - ${algolia_failures.join('\n - ')}\n\n`;
+              }
+               if (skipped_jobs.length > 0) {
+                slack_message += `*Skipped Jobs* (Did not run due to upstream failure) :next_track_button::\n - ${skipped_jobs.join('\n - ')}\n\n`;
+              }
+              if (unknown_failures.length > 0) {
+                 slack_message += `*Unknown/Other Issues* :question::\n - ${unknown_failures.join('\n - ')}\n\n`;
+              }
+            } else {
+               console.log("All jobs completed successfully.");
+               // Optionally send a success message or take no action
+               // slack_message = "*GitHub Actions: Doc Crawl Workflow completed successfully* :white_check_mark:";
+            }
+
+            core.setOutput('slack_message', slack_message);
+            // Output true if there were *any* issues (failures or skips)
+            core.setOutput('has_issues', has_issues.toString());
+
+      - name: Send Slack Notification on Issues
+        # Send if the aggregation step detected *any* non-success states
+        if: steps.aggregate.outputs.has_issues == 'true' && steps.aggregate.outputs.slack_message != ''
         run: |
-          echo "IsError=${{ contains(needs.*.result, 'failure')}}" >> $GITHUB_ENV
-          echo "IsErrorAndAlgoliaFailure=${{ contains(needs.*.result, 'failure') && contains(needs.*.result, 'panic: failed to do request: all hosts have been contacted unsuccessfully')}}" >> $GITHUB_ENV
-          echo ""
-      - name: do-job
-        id: do-job
-        run: |
-          if [[ "${{ contains(needs.*.result, 'failure') && contains(needs.*.result, 'panic: failed to do request: all hosts have been contacted unsuccessfully')}}" ]];then 
-          echo "Algolia server please rerun the same action with option of re runing only failed jobs"
+          echo "${{ steps.aggregate.outputs.has_issues }}"
+          echo "${{ steps.aggregate.outputs.slack_message }}"
+        # uses: slackapi/slack-github-action@v1.25.0
+        # with:
+        #   channel-id: 'YOUR_SLACK_CHANNEL_ID' # Replace
+        #   payload: |
+        #     {
+        #       "text": "${{ steps.aggregate.outputs.slack_message }}"
+        #     }
+        # env:
+        #   SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }} # Add secret

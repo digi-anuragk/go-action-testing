@@ -1,0 +1,103 @@
+name: Reusable Docs Build and Crawl
+
+on:
+  workflow_call:
+    inputs:
+      ibe:
+        type: boolean
+        required: true
+      iae:
+        type: boolean
+        required: true
+      targetRepo:
+        description: Target Docs repository
+        type: string
+        required: true
+    #   localTest:
+    #     description: Should generate json file only
+    #     type: boolean
+    #     required: true
+    #   replaceIndex:
+    #     description: Send Records in tmp index
+    #     type: boolean
+    #     required: true
+    #   moveIndex:
+    #     description: Only for final job (true) will Swap tmp Index with Production Index
+    #     type: boolean
+    #     required: true
+    #   configFilePath:
+    #     description: Config file path to take
+    #     type: string
+    #     required: true
+    # secrets:
+    #   GH_PAT:
+    #     description: github PAT
+    #     required: true
+    #   appID:
+    #     description: Algolia App ID
+    #     required: true
+    #   apiKey:
+    #     description: Algolia API apiKey
+    #     required: true
+
+jobs:
+  build_and_crawl:
+    runs-on: ubuntu-latest
+    outputs:
+      outcome: ${{ steps.set_status.outputs.status }}
+      error_details: ${{ steps.set_status.outputs.error_log }}
+    steps:
+
+      # --- Build Step ---
+      - name: Build Documentation
+        id: build
+        run: |
+          if[[ "${{ inputs.ibe }}" == "true" ]]; then
+          echo "Error:  Client bundle compiled with errors therefore further build is impossible." >&2
+          else
+          echo "Success"
+          
+              # --- Crawl Step (only if build succeeded) ---
+      - name: Run Algolia Crawler
+        id: crawl
+        run: |
+          if[[ "${{ inputs.ibe }}" == "true" ]]; then
+          echo "panic: failed to do request: all hosts have been contacted unsuccessfully, it can either be a server or a network error or wrong appID/key credentials were used. cannot perform request:" >&2
+          else
+          echo "Success"
+
+      # --- Determine Final Status ---
+      - name: Set Final Status
+        id: set_status
+        run: |
+          STATUS="unknown"
+          ERROR_LOG="No specific error captured."
+          if [[ "${{ steps.build.outcome }}" == 'failure' ]]; then
+            STATUS="build_failure"
+            ERROR_LOG="Documentation build failed for ${{ inputs.targetRepo }}."
+            echo "Build failure detected."
+          elif [[ "${{ steps.crawl.outcome }}" == 'failure' ]]; then
+            echo "Crawl step failed. Checking logs..."
+            if grep -q "panic:" crawl_output.log; then # Check for panic
+              STATUS="algolia_failure"
+              ERROR_LOG=$(grep "panic:" crawl_output.log | head -n 1)
+              echo "Algolia failure (panic) detected."
+            else
+              STATUS="algolia_failure" # Still an Algolia-related failure
+              ERROR_LOG=$(tail -n 5 crawl_output.log)
+              echo "Generic crawl failure detected."
+            fi
+          elif [[ "${{ steps.build.outcome }}" == 'success' && "${{ steps.crawl.outcome }}" == 'success' ]]; then
+            STATUS="success"
+            echo "Build and Crawl successful."
+          else
+             STATUS="unknown_failure"
+             ERROR_LOG="Unexpected state. Build: ${{ steps.build.outcome }}, Crawl: ${{ steps.crawl.outcome }}"
+             echo "Unknown failure state."
+          fi
+          # Escape output for GitHub Actions
+          ERROR_LOG="${ERROR_LOG//'%'/'%25'}"
+          ERROR_LOG="${ERROR_LOG//$'\n'/'%0A'}"
+          ERROR_LOG="${ERROR_LOG//$'\r'/'%0D'}"
+          echo "status=${STATUS}" >> $GITHUB_OUTPUT
+          echo "error_log=${ERROR_LOG}" >> $GITHUB_OUTPUT
