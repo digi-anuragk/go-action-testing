@@ -80,6 +80,7 @@ jobs:
         with:
           script: |
             const needs_context = ${{ toJson(needs) }};
+            const github_context = ${{ toJson(github) }};
             console.log("Needs Context:", JSON.stringify(needs_context, null, 2));
 
             let build_failures = [];
